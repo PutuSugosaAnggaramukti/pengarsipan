@@ -15,11 +15,11 @@
     
     <div class="grid sm:grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-3">
         @for ($i = 0; $i < count($dataBerkas); $i++)
-            <a href="{{url('/User/Document/'.$dataBerkas[$i]["tahun"])}}" class="rounded-lg">
+            <a href="{{ route('user.page.document', ['parameter' => $dataBerkas[$i]["tahun"]]) }}" class="rounded-lg">
                 <div class="bg-[#0012cf] rounded-lg p-4 hover:bg-blue-500">
                     <div class="flex flex-column items-center">
                         <i class="fa fa-book fa-2x text-[white]"></i>
-                        <b class="text-white font-bold">{{$dataBerkas[$i]["tahun"]}}</b>
+                        <b class="text-white font-bold">{{ $dataBerkas[$i]["tahun"] }}</b>
                     </div>
                 </div>
             </a>    

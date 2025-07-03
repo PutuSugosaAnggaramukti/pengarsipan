@@ -3,39 +3,42 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Models\User;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Session;
 
 class SyLoginController extends Controller
 {
-    public function loginSy(Request $request)
+    public function showLoginForm()
     {
-        $username=$request->username;
-        $password=$request->password;
-        $dataUser=$this->dataUser($username, $password);
-        if ($dataUser->count()>0) {
-            $role=$dataUser->toArray()[0];
-            if ($role["role"]=="karyawan") {
-                return redirect()->route("user.page.dashboard");
-            }else if($role["role"]=="user")
-            {
-                return redirect()->route("pembukuan.page.dashboard");
-            }else if($role["role"]=="admin")
-            {
-                return redirect()->route("admin.page.dashboard");
-            }else{
-                return redirect()->route("page.login");
-            }
-        }
-        else
-        {
-            return redirect()->route("page.login");
-        }
+        return view('user.login');
     }
 
-    function dataUser($username, $password='$2y$12$MrcBMzkgc3r/O7pUTdMNZergx8MhAng32XmtMJeOsD64jT1bpl0WS')
-    {        
-        $dataUser=User::where("username","$username")
-                        ->where("password","$password")->get();
-        return $dataUser;
+    public function login(Request $request)
+    {
+        $credentials = $request->only('username', 'password');
+
+    if (Auth::attempt($credentials)) {
+        $user = Auth::user();
+
+        // simpan data user ke session
+        Session::put('nama_user', $user->nama_user);
+        Session::put('role', $user->role);
+
+        // flash message
+        session()->flash('success', 'Login berhasil! Selamat datang, ' . $user->nama_user);
+
+        // langsung redirect ke dashboard umum
+        return redirect()->route('user.page.dashboard');
     }
+
+    return redirect()->route('page.login')->with('error', 'Username atau password salah.');
+    }
+
+   public function logout()
+    {
+        Session::flush(); // hapus semua session
+        Auth::logout();
+        return redirect()->route('page.login')->with('success', 'Anda berhasil logout.');
+    }
+
 }
