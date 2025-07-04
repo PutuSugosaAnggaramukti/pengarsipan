@@ -7,7 +7,7 @@
 @endpush
 
 @section('breadcurb')
-    <a href="#" class="p-3 text-white no-underline rounded-lg hover:bg-[#4681ff]">Dashboard</a> &gt;
+    <a href="/user/dashboard" class="p-3 text-white no-underline rounded-lg hover:bg-[#4681ff]">Dashboard</a> &gt;
     <a href="#" class="p-3 text-white no-underline rounded-lg hover:bg-[#4681ff]">
         Document {{ $dataBerkas["th"] }}
     </a>
@@ -48,7 +48,6 @@
             <div class="modal-body space-y-2">
                 <p><strong>User Upload:</strong> <span id="detailUser"></span></p>
                 <p><strong>Waktu Upload:</strong> <span id="detailTime"></span></p>
-                <p><strong>Ukuran File:</strong> <span id="detailSize"></span></p>
             </div>
         </div>
     </div>
@@ -67,10 +66,10 @@
                 <div class="modal-body">
                     <div class="note text-sm mb-2">Maksimal size file per PDF 200MB</div>
                     <label>Year:</label>
-                    <input type="text" name="year" value="{{ $dataBerkas['th'] }}" readonly class="w-full p-2 mb-3 rounded bg-gray-100">
+                  <input type="text" name="tahun" value="{{ $dataBerkas['th'] }}" readonly class="w-full p-2 mb-3 rounded bg-gray-100">
 
                     <label>Choose PDF files:</label>
-                    <input type="file" name="files[]" multiple accept="application/pdf" class="w-full p-2 mb-3 border rounded">
+                  <input type="file" name="file[]" multiple accept="application/pdf" class="w-full p-2 mb-3 border rounded">
                 </div>
                 <div class="modal-footer">
                     <button type="submit" class="btn btn-primary">Upload</button>
@@ -139,11 +138,10 @@ $(document).ready(function(){
     });
 
     // Inisialisasi DataTables
-  console.log("=== SCRIPT DATATABLE LOADED ===");
-
 var table = $('#example').DataTable({
     processing: true,
-    serverSide: false, // kalau pakai query biasa / DB::table, tetap pakai false
+    serverSide: false,
+    order: [[1, 'desc']], // order by tanggal desc
     ajax: {
         url: "{{ route('user.page.document.post.berkas') }}",
         type: "POST",
@@ -167,7 +165,14 @@ var table = $('#example').DataTable({
         { data: null, render: function(data, type, row, meta) {
             return meta.row + 1;
         }},
-        { data: 'created_at' },
+        { data: 'created_at', render: function(data, type, row) {
+            if (!data) return '-';
+            let date = new Date(data);
+            let day = String(date.getDate()).padStart(2, '0');
+            let month = String(date.getMonth() + 1).padStart(2, '0');
+            let year = date.getFullYear();
+            return `${day}-${month}-${year}`;
+        }},
         { data: 'tahun' },
         { data: 'nama_berkas' },
         { data: null, render: function(data, type, row) {
@@ -178,8 +183,10 @@ var table = $('#example').DataTable({
                 <a href="#" onclick="openDeleteModal(${row.id})" class="text-center px-4 text-[red] no-underline cursor-pointer hover:bg-[#eaea] rounded-lg py-2">
                     <i class="fa fa-trash fa-lg block"></i><b class="block mt-1">Delete</b>
                 </a>
-                <a onclick="detailBerkas(${row.id})" class="text-center px-4 text-[blue] cursor-pointer no-underline hover:bg-[#eaea] rounded-lg py-2" data-bs-toggle="modal" data-bs-target="#detail">
-                    <i class="fa fa-info-circle fa-lg block"></i><b class="block mt-1">Info</b>
+                <a onclick="detailBerkas(${row.id})"
+                class="text-center px-4 text-[blue] cursor-pointer no-underline hover:bg-[#eaea] rounded-lg py-2">
+                    <i class="fa fa-info-circle fa-lg block"></i>
+                    <b class="block mt-1">Info</b>
                 </a>
             </div>`;
         }}
@@ -188,10 +195,29 @@ var table = $('#example').DataTable({
 
 
     // Upload form
-   $('#uploadForm').on('submit', function(e){
+$('#uploadForm').on('submit', function(e){
     e.preventDefault();
-    console.log("UPLOAD CLICKED");
+
+    // Cek apakah input file kosong
+    if ($('input[name="file[]"]')[0].files.length === 0) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Tidak ada file',
+            text: 'Silakan pilih file PDF sebelum mengupload.'
+        });
+        return; // stop submit
+    }
+
     var formData = new FormData(this);
+    formData.append('device_time', getLocalDateTime());
+
+    Swal.fire({
+        title: 'Mengupload...',
+        html: 'Harap tunggu file sedang diupload.',
+        allowOutsideClick: false,
+        didOpen: () => { Swal.showLoading(); }
+    });
+
     $.ajax({
         url: $(this).attr('action'),
         method: 'POST',
@@ -199,39 +225,80 @@ var table = $('#example').DataTable({
         processData: false,
         contentType: false,
         success: function (response) {
-            console.log("UPLOAD SUCCESS", response);
-            alert('Upload berhasil!');
+            Swal.fire({
+                icon: 'success',
+                title: 'Upload Berhasil',
+                text: response.message,
+                timer: 2000,
+                showConfirmButton: false
+            });
+            $('#uploadForm')[0].reset(); // <-- reset form (bersihkan input file)
+            $('#tambahBerkas').modal('hide');
             table.ajax.reload();
         },
         error: function (xhr) {
-            console.log("UPLOAD FAILED", xhr.status, xhr.responseText);
-            alert('Upload gagal!');
+            Swal.fire({
+                icon: 'error',
+                title: 'Upload Gagal',
+                text: 'Periksa ukuran atau format file.'
+            });
         }
     });
 });
 
+
+function getLocalDateTime() {
+    let now = new Date();
+    return now.getFullYear()
+         + "-" + String(now.getMonth() + 1).padStart(2, '0')
+         + "-" + String(now.getDate()).padStart(2, '0')
+         + " " + String(now.getHours()).padStart(2, '0')
+         + ":" + String(now.getMinutes()).padStart(2, '0')
+         + ":" + String(now.getSeconds()).padStart(2, '0');
+}
+
+
     // Delete
-    $('#deleteForm').on('submit', function(e){
-        e.preventDefault();
-        var id = $('#delete_id').val();
-        $.ajax({
-            url: "/user/document/delete/" + id,
-            method: "DELETE",
-            data: {
-                _token: "{{ csrf_token() }}"
-            },
-            xhrFields: { withCredentials: true },
-            success: function(response){
-                alert('Berkas berhasil dihapus!');
-                $('#modalDelete').modal('hide');
-                table.ajax.reload();
-            },
-            error: function(xhr){
-                console.log(xhr.responseText);
-                alert('Gagal menghapus!');
-            }
-        });
+ $('#deleteForm').on('submit', function(e){
+    e.preventDefault();
+    var id = $('#delete_id').val();
+
+    Swal.fire({
+        title: 'Menghapus...',
+        html: 'Harap tunggu berkas sedang dihapus.',
+        allowOutsideClick: false,
+        didOpen: () => { Swal.showLoading(); }
     });
+
+    $.ajax({
+        url: "/user/document/delete/" + id,
+        method: "DELETE",
+        data: {
+            _token: "{{ csrf_token() }}"
+        },
+        xhrFields: { withCredentials: true },
+        success: function(response){
+            Swal.fire({
+                icon: 'success',
+                title: 'Berhasil',
+                text: 'Berkas berhasil dihapus.',
+                timer: 2000,
+                showConfirmButton: false
+            });
+            $('#modalDelete').modal('hide');
+            table.ajax.reload();
+        },
+        error: function(xhr){
+            console.log(xhr.responseText);
+            Swal.fire({
+                icon: 'error',
+                title: 'Gagal',
+                text: 'Gagal menghapus berkas.'
+            });
+        }
+    });
+});
+
 
     // DataTables style tweaks
     $('#dt-length-0').addClass('bg-white mr-4');
@@ -242,23 +309,34 @@ var table = $('#example').DataTable({
 
 // fungsi modal detail
 function detailBerkas(id) {
+    Swal.showLoading();
     $.ajax({
-        url: "{{ url('/user/document/detail') }}/" + id,
+        url: "/user/document/detail/" + id,
         method: "GET",
-        xhrFields: { withCredentials: true },
         success: function(response) {
-            $('#detailUser').text(response.user);
-            $('#detailTime').text(response.waktu_upload);
-            $('#detailSize').text(response.size);
+            console.log("=== DETAIL RESPONSE ===", response);
+
+            let waktuUpload = response.waktu_upload ?? '-';
+            if (waktuUpload.includes(" ")) {
+                let tanggal = waktuUpload.split(" ")[0];
+                let jamSekarang = new Date();
+                let timeNow = String(jamSekarang.getHours()).padStart(2, '0') + ":" +
+                              String(jamSekarang.getMinutes()).padStart(2, '0') + ":" +
+                              String(jamSekarang.getSeconds()).padStart(2, '0');
+                waktuUpload = tanggal + " " + timeNow;
+            }
+
+            $('#detailUser').text(response.user ?? '-');
+            $('#detailTime').text(waktuUpload);
+            Swal.close();
             $('#detail').modal('show');
         },
         error: function(xhr) {
-            console.log(xhr.responseText);
-            alert('Gagal memuat detail berkas.');
+            console.log("=== DETAIL ERROR ===", xhr.status, xhr.responseText);
+            Swal.fire('Error', 'Gagal memuat detail berkas.', 'error');
         }
     });
 }
-
 // fungsi modal delete
 function openDeleteModal(id){
     $('#delete_id').val(id);
@@ -266,17 +344,27 @@ function openDeleteModal(id){
 }
 
 function previewPDF(id) {
+    console.log("Memuat preview PDF untuk ID:", id);
+
     $.ajax({
         url: "{{ url('/user/document/show') }}/" + id,
         method: "GET",
         xhrFields: { withCredentials: true },
         success: function(response) {
-            $('#previewTitle').text("Preview: " + response.nama);
-            $('#pdfIframe').attr('src', response.file);
-            $('#modalPreview').modal('show');
+            console.log("Data preview diterima:", response);
+
+            if (response && response.file) {
+                $('#previewTitle').text("Preview: " + response.nama);
+                $('#pdfIframe').attr('src', response.file);
+                $('#modalPreview').modal('show');
+            } else {
+                console.error("Response JSON tidak sesuai:", response);
+                alert("Data preview tidak lengkap.");
+            }
         },
         error: function(xhr) {
-            console.log(xhr.responseText);
+            console.error("AJAX Gagal:", xhr.status, xhr.statusText);
+            console.error("Response:", xhr.responseText);
             alert('Gagal memuat PDF.');
         }
     });

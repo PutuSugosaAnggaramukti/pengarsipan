@@ -3,20 +3,16 @@
 namespace App\Http\Controllers\User\Document;
 
 use App\Models\Document;
-use Illuminate\Support\Str;
-use App\Models\User;
-use Carbon\Carbon;
-use App\Models\User\Document\DocumentModel;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\Log;
-use App\Http\Controllers\Controller;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Http\Request;
+use App\Http\Controllers\Controller;
 
 class DocumentController extends Controller
 {
-  public function index($id)
+    public function index($id)
     {
         $dataBerkas['berkas'] = Document::where("tahun", $id)->get()->toArray();
         $dataBerkas["th"] = $id;
@@ -25,22 +21,23 @@ class DocumentController extends Controller
 
     public function upload(Request $request)
     {
-    
-     Log::info('--- UPLOAD CALLED ---');
-     Log::info('USER:', ['user' => Auth::user()]);
-     Log::info('FILES:', ['files' => $request->file('files')]);
+        $deviceTime = $request->input('device_time');
 
-    if($request->hasFile('files')) {
-        foreach ($request->file('files') as $file) {
-            $filename = time().'_'.$file->getClientOriginalName();
-            $file->storeAs('public/documents', $filename);
+    if ($request->hasFile('file')) {
+        foreach ($request->file('file') as $file) {
+            // hilangkan time() supaya nama file asli
+            $filename = $file->getClientOriginalName();
+            
+            // simpan di storage/app/public/documents/{tahun}
+            $path = $file->storeAs('documents/'.$request->tahun, $filename, 'public');
 
-           Document::create([
-            'nama_berkas' => $filename,
-            'path' => 'storage/documents/' . $filename,
-            'tahun' => $request->year,
-            'tanggal' => now(),
-            'npp' => Auth::user()->npp, // <== pakai npp
+            Document::create([
+                'nama_berkas' => $filename,
+                'path' => $path,
+                'tahun' => $request->tahun,
+                'npp' => Auth::user()->npp,
+                'created_at' => $deviceTime,
+                'updated_at' => $deviceTime
             ]);
         }
     }
@@ -49,60 +46,57 @@ class DocumentController extends Controller
     }
 
     public function detail($id)
-{
-    $file = Document::with('user')->findOrFail($id);
+    {
+        $file = Document::with('user')->findOrFail($id);
 
-    return response()->json([
-        'user' => $file->user->nama_user ?? '-',
-        'waktu_upload' => $file->created_at->format('d-m-Y H:i:s'),
-        'size' => number_format($file->file_size / 1024 / 1024, 2) . ' MB',
-    ]);
-}
-   public function datatable(Request $request)
-{
-     $tahun = $request->data;
+        return response()->json([
+            'user' => $file->user->nama_user ?? '-',
+            'waktu_upload' => $file->created_at->format('d-m-Y H:i:s'),
+        ]);
+    }
 
-    Log::info('DATATABLE AJAX CALLED', [
-        'tahun' => $tahun
-    ]);
+    public function datatable(Request $request)
+    {
+        $tahun = $request->data;
 
-    $files = DB::table('documents')
-        ->where('tahun', $tahun)
-        ->get();
+        Log::info('DATATABLE AJAX CALLED', ['tahun' => $tahun]);
 
-    Log::info('DATATABLE QUERY RESULT', [
-        'count' => count($files),
-        'data' => $files
-    ]);
+        $files = DB::table('documents')
+            ->where('tahun', $tahun)
+            ->get();
 
-    return response()->json(['data' => $files]);
-}
+        Log::info('DATATABLE QUERY RESULT', [
+            'count' => count($files),
+            'data' => $files
+        ]);
+
+        return response()->json(['data' => $files]);
+    }
 
     public function destroy($id)
     {
         $document = Document::findOrFail($id);
 
-        if (Storage::exists('public/' . $document->path)) {
-            Storage::delete('public/' . $document->path);
+        // path di DB: documents/2025/xxx.pdf
+        if (Storage::disk('public')->exists($document->path)) {
+            Storage::disk('public')->delete($document->path);
         }
 
         $document->delete();
 
         return response()->json(['success' => 'Berkas berhasil dihapus.']);
     }
+
     public function show($id)
     {
-        
-    $file = Document::findOrFail($id);
+        $file = Document::findOrFail($id);
 
-    // hilangkan storage manual jika path di DB sudah `documents/...`
-    $publicPath = 'storage/' . ltrim($file->path, '/');
+        // path di DB: documents/2025/xxx.pdf
+        $fileUrl = asset('storage/' . $file->path);
 
-    return response()->json([
-        'nama' => $file->nama_berkas,
-        'file' => asset($publicPath)
-    ]);
-    
+        return response()->json([
+            'nama' => $file->nama_berkas,
+            'file' => $fileUrl
+        ]);
     }
-
 }

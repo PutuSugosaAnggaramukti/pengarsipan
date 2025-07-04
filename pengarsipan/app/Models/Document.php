@@ -21,8 +21,13 @@ use Illuminate\Database\Eloquent\Model;
 
 class Document extends Model
 {
-    protected $table = 'documents';
-    protected $fillable = ['nama_berkas', 'path', 'tahun', 'file_size', 'npp'];
+   protected $fillable = [
+        'nama_berkas',
+        'path',
+        'tahun',
+        'tanggal',
+        'npp',
+    ];
 
     public function user()
     {
