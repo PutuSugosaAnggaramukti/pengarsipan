@@ -21,14 +21,14 @@ class DocumentController extends Controller
 
     public function upload(Request $request)
     {
-        $deviceTime = $request->input('device_time');
+      $deviceTime = $request->input('device_time');
+    $totalUploaded = 0;
 
     if ($request->hasFile('file')) {
+        $totalUploaded = count($request->file('file'));
+
         foreach ($request->file('file') as $file) {
-            // hilangkan time() supaya nama file asli
             $filename = $file->getClientOriginalName();
-            
-            // simpan di storage/app/public/documents/{tahun}
             $path = $file->storeAs('documents/'.$request->tahun, $filename, 'public');
 
             Document::create([
@@ -42,7 +42,10 @@ class DocumentController extends Controller
         }
     }
 
-    return response()->json(['message' => 'Upload success']);
+    return response()->json([
+        'message' => 'Upload success',
+        'total_uploaded' => $totalUploaded
+    ]);
     }
 
     public function detail($id)

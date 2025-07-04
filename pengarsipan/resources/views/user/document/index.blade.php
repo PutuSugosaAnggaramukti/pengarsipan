@@ -138,10 +138,12 @@ $(document).ready(function(){
     });
 
     // Inisialisasi DataTables
+var totalRecords = 0;
+
 var table = $('#example').DataTable({
     processing: true,
     serverSide: false,
-    order: [[1, 'desc']], // order by tanggal desc
+    order: [[1, 'desc']],
     ajax: {
         url: "{{ route('user.page.document.post.berkas') }}",
         type: "POST",
@@ -152,6 +154,7 @@ var table = $('#example').DataTable({
         dataSrc: function(json) {
             console.log("=== DATA RECEIVED FROM SERVER ===", json);
             window._myJsonData = json;
+            totalRecords = json.data.length;
             return json.data || [];
         },
         error: function(xhr, status, error) {
@@ -163,7 +166,7 @@ var table = $('#example').DataTable({
     },
     columns: [
         { data: null, render: function(data, type, row, meta) {
-            return meta.row + 1;
+            return (totalRecords - (meta.row + meta.settings._iDisplayStart));
         }},
         { data: 'created_at', render: function(data, type, row) {
             if (!data) return '-';
@@ -198,14 +201,13 @@ var table = $('#example').DataTable({
 $('#uploadForm').on('submit', function(e){
     e.preventDefault();
 
-    // Cek apakah input file kosong
     if ($('input[name="file[]"]')[0].files.length === 0) {
         Swal.fire({
             icon: 'warning',
             title: 'Tidak ada file',
             text: 'Silakan pilih file PDF sebelum mengupload.'
         });
-        return; // stop submit
+        return;
     }
 
     var formData = new FormData(this);
@@ -213,9 +215,15 @@ $('#uploadForm').on('submit', function(e){
 
     Swal.fire({
         title: 'Mengupload...',
-        html: 'Harap tunggu file sedang diupload.',
-        allowOutsideClick: false,
-        didOpen: () => { Swal.showLoading(); }
+        html: `
+            <div class="mb-2">Harap tunggu file sedang diupload.</div>
+            <div id="progress-container" style="width:100%; background:#e0e0e0; border-radius:8px;">
+                <div id="progress-bar" style="width:0%; height:16px; background:#4caf50; border-radius:8px;"></div>
+            </div>
+            <div id="progress-text" style="margin-top:4px; font-size:12px;">0%</div>
+        `,
+        showConfirmButton: false,
+        allowOutsideClick: false
     });
 
     $.ajax({
@@ -224,15 +232,26 @@ $('#uploadForm').on('submit', function(e){
         data: formData,
         processData: false,
         contentType: false,
+        xhr: function() {
+            var xhr = new window.XMLHttpRequest();
+            xhr.upload.addEventListener("progress", function(evt) {
+                if (evt.lengthComputable) {
+                    var percentComplete = Math.round((evt.loaded / evt.total) * 100);
+                    $('#progress-bar').css('width', percentComplete + '%');
+                    $('#progress-text').text(percentComplete + '%');
+                }
+            }, false);
+            return xhr;
+        },
         success: function (response) {
             Swal.fire({
                 icon: 'success',
                 title: 'Upload Berhasil',
-                text: response.message,
-                timer: 2000,
+                html: `Total file terupload: <b>${response.total_uploaded ?? 'N/A'}</b>`,
+                timer: 3000,
                 showConfirmButton: false
             });
-            $('#uploadForm')[0].reset(); // <-- reset form (bersihkan input file)
+            $('#uploadForm')[0].reset();
             $('#tambahBerkas').modal('hide');
             table.ajax.reload();
         },
