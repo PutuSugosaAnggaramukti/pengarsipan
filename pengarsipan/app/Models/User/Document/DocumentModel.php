@@ -3,21 +3,32 @@
 namespace App\Models\User\Document;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Models\User\User;
 
 class DocumentModel extends Model
 {
-    protected $table="document";
-    protected $primaryKey="id_document";
-    public $timestamps=false;
-    protected $fillable=[
+    use SoftDeletes;
+
+    protected $table = 'documents';
+    protected $primaryKey = 'id_document';
+
+    protected $fillable = [
         'nomor',
-        'jenis_document',
         'tanggal',
         'tahun',
         'nama_document',
+        'file',
         'direktory_document',
-        'create_at',
-        'update_at',
         'npp'
     ];
+
+    /**
+     * Relasi ke User
+     * documents.npp => users.npp
+     */
+    public function user()
+    {
+        return $this->belongsTo(\App\Models\User::class, 'npp', 'npp');
+    }
 }

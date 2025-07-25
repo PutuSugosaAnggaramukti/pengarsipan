@@ -16,9 +16,7 @@ class DocumentController extends Controller
     }
     public function index()
     {
-        $dataDocument=DocumentModel::select("tahun")
-        ->distinct()
-        ->get()->toArray();
-        return view("user/document/index", compact("dataDocument"));
+        $dataDocument = DocumentModel::select('tahun')->distinct()->get();
+        return view('user.document.index', compact('dataDocument'));
     }   
 }
