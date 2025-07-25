@@ -1,7 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\LoginController;
+use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\SyLoginController;
 use App\Http\Controllers\User\DashboardUser;
 use App\Http\Controllers\User\Document\DocumentController;
@@ -11,17 +11,21 @@ use App\Http\Controllers\User\Agunan\AgunanController;
 use App\Http\Controllers\User\Berkas\BerkasController;
 use App\Http\Controllers\User\Berkas\SyBerkasController;
 
+// Test auth
+Route::get('/test-auth', function() {
+    return Auth::user();
+});
 
-Route::middleware(['web'])->group(function () {
+// ROUTE LOGIN
+Route::get('/', function() {
+    return view('user.login');
+})->name('page.login');
 
-    // ROUTE LOGIN
-    Route::get('/', function() {
-        return view('user.login');
-    })->name('page.login');
+Route::post('/', [SyLoginController::class, 'loginSy'])->name('page.login.post');
+Route::get('/logout', [SyLoginController::class, 'logoutSy'])->name('page.logout.sy');
 
-    Route::post('/', [SyLoginController::class, 'loginSy'])->name('page.login.post');
-
-    Route::get('/logout', [SyLoginController::class, 'logoutSy'])->name('page.logout.sy');
+// Group semua route yang perlu middleware
+Route::middleware(['web', 'auth'])->group(function () {
 
     // DASHBOARD
     Route::get('/User/Dashboard',[DashboardUser::class,"index"])->name("user.page.dashboard");
@@ -33,7 +37,6 @@ Route::middleware(['web'])->group(function () {
     Route::post('/User/Document/POST/Document',[SyDocumentController::class,"document"])->name("user.page.document.post.document");
     Route::post('/User/Document/POST/DetailDocument',[SyDocumentController::class,"detail"])->name("user.page.document.post.detail");
     Route::post('/User/document/mass-delete', [SyDocumentController::class, 'hapusBanyak'])->name('user.page.document.massDelete');
-
 
     //AGUNAN    
     Route::get('/User/Agunan', [AgunanController::class, "index"])->name("user.page.agunan");
@@ -48,24 +51,25 @@ Route::middleware(['web'])->group(function () {
     Route::get('/agunan/preview/{tahun}/{file}', [AgunanController::class, 'preview'])->name('agunan.preview');
     Route::delete('/document/delete/{id}', [SyDocumentController::class, 'softDelete'])->name('document.softdelete');
     Route::delete('/agunan/delete/{id}', [AgunanController::class, 'softDelete'])->name('agunan.softdelete');
-    
+
     Route::prefix('recycle-bin')->group(function() {
-    Route::get('/', [RecycleBinController::class, 'index'])->name('user.recyclebin');
+        Route::get('/', [RecycleBinController::class, 'index'])->name('user.recyclebin');
+        Route::get('/restore/document/{id}', [RecycleBinController::class, 'restoreDocument'])->name('user.recyclebin.restore.document');
+        Route::delete('/force-delete/document/{id}', [RecycleBinController::class, 'forceDeleteDocument'])->name('user.recyclebin.forceDelete.document');
 
-    Route::get('/restore/document/{id}', [RecycleBinController::class, 'restoreDocument'])->name('user.recyclebin.restore.document');
-    Route::delete('/force-delete/document/{id}', [RecycleBinController::class, 'forceDeleteDocument'])->name('user.recyclebin.forceDelete.document');
+        Route::get('/restore/agunan/{id}', [RecycleBinController::class, 'restoreAgunan'])->name('user.recyclebin.restore.agunan');
+        Route::delete('/force-delete/agunan/{id}', [RecycleBinController::class, 'forceDeleteAgunan'])->name('user.recyclebin.forceDelete.agunan');
+    });
 
-    Route::get('/restore/agunan/{id}', [RecycleBinController::class, 'restoreAgunan'])->name('user.recyclebin.restore.agunan');
-    Route::delete('/force-delete/agunan/{id}', [RecycleBinController::class, 'forceDeleteAgunan'])->name('user.recyclebin.forceDelete.agunan');
-});
+    //INFO DOKUMEN & AGUNAN
+    Route::post('/User/Document/POST/DetailDocument', [SyDocumentController::class, 'detail'])->name('user.page.document.post.detail');
+    Route::post('User/Agunan/POST/DetailAgunan', [AgunanController::class, 'detail'])->name('user.page.agunan.post.detail');
 
-    //INFO DOKUMEN
-    Route::post('/User/Document/POST/DetailDocument', [SyDocumentController::class, 'detail'])
-    ->name('user.page.document.post.detail');
-    Route::post('User/Agunan/POST/DetailAgunan', [App\Http\Controllers\User\Agunan\AgunanController::class, 'detail'])
-    ->name('user.page.agunan.post.detail');
-
-
-
-
+    // Tambahan dari remote:
+    Route::post('/user/document/post/berkas', [DocumentController::class, "datatable"])->name("user.page.document.post.berkas");
+    Route::post('/user/document/post/detail', [DocumentController::class, "detail"])->name("user.page.document.post.detail");
+    Route::post('/user/document/upload', [DocumentController::class, 'upload'])->name('user.document.upload');
+    Route::delete('/user/document/delete/{id}', [DocumentController::class, 'destroy'])->name('user.document.delete');
+    Route::get('/user/document/show/{id}', [DocumentController::class, 'show'])->name('user.document.show');
+    Route::get('/user/document/detail/{id}', [DocumentController::class, 'detail']);
 });

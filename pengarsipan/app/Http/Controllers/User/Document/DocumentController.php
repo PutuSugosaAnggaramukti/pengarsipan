@@ -2,9 +2,13 @@
 
 namespace App\Http\Controllers\User\Document;
 
-use App\Http\Controllers\Controller;
+use App\Models\Document;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Http\Request;
-use App\Models\User\Document\DocumentModel;
+use App\Http\Controllers\Controller;
 
 class DocumentController extends Controller
 {

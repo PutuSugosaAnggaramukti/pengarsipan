@@ -53,7 +53,11 @@
                         </div>
                     </form>
                 </div>
-            </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-primary">Upload</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
+                </div>
+            </form>
         </div>
     </div>
 
@@ -138,3 +142,4 @@
     });
 </script>
 @endpush
+
