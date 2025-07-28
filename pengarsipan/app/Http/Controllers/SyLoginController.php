@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Log;
 
 class SyLoginController extends Controller
 {
-    public function showLoginForm()
+    public function loginSy(Request $request)
     {
         $credentials = $request->only('username', 'password');
         Log::info('Try Login', $credentials);

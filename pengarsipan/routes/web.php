@@ -59,6 +59,8 @@ Route::middleware(['web', 'auth'])->group(function () {
 
         Route::get('/restore/agunan/{id}', [RecycleBinController::class, 'restoreAgunan'])->name('user.recyclebin.restore.agunan');
         Route::delete('/force-delete/agunan/{id}', [RecycleBinController::class, 'forceDeleteAgunan'])->name('user.recyclebin.forceDelete.agunan');
+        Route::post('/recyclebin/restore/bulk', [RecycleBinController::class, 'bulkRestore'])->name('user.recyclebin.bulkRestore');
+        Route::delete('/recyclebin/delete/bulk', [RecycleBinController::class, 'bulkDelete'])->name('user.recyclebin.bulkDelete');
     });
 
     //INFO DOKUMEN & AGUNAN

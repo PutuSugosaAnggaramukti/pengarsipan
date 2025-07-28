@@ -20,29 +20,29 @@
     </div>
 
     {{-- Modal tambah Document --}}
-    <div class="modal fade" id="tambahDocument" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+   <div class="modal fade" id="tambahDocument" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h4 class="modal-title font-bold">Tambah Document</h4>
+                    <h4 class="modal-title font-bold">Tambah Agunan</h4>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <form id="uploadForm" action="{{ route('user.page.document.tambah') }}" method="POST" enctype="multipart/form-data">
+                    <form id="uploadAgunanForm" action="{{ route('user.page.document.tambah') }}" method="POST" enctype="multipart/form-data">
                         @csrf
                         <div class="mb-3">
-                            <label for="tahun" class="form-label">Tahun Dokumen</label>
+                            <label for="tahun" class="form-label">Tahun Agunan</label>
                             <input type="number" name="tahun" class="form-control" required placeholder="Contoh: 2025">
                         </div>
                         <div class="mb-3">
-                            <label for="documents" class="form-label">Pilih File Dokumen</label>
-                            <input type="file" name="documents[]" class="form-control" id="documentsInput" multiple required>
+                            <label for="agunans" class="form-label">Pilih File Agunan</label>
+                            <input type="file" name="agunans[]" class="form-control" id="agunansInput" multiple required>
                             <small class="text-muted">Bisa pilih lebih dari satu file sekaligus</small>
                         </div>
 
                         <div class="mb-3">
-                            <div class="progress" style="height: 20px; display: none;" id="uploadProgress">
-                                <div class="progress-bar bg-success" id="progressBar" style="width: 0%">0%</div>
+                            <div class="progress" style="height: 20px; display: none;" id="uploadAgunanProgress">
+                                <div class="progress-bar bg-success" id="agunanProgressBar" style="width: 0%">0%</div>
                             </div>
                         </div>
 
@@ -53,11 +53,7 @@
                         </div>
                     </form>
                 </div>
-                <div class="modal-footer">
-                    <button type="submit" class="btn btn-primary">Upload</button>
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
-                </div>
-            </form>
+            </div>
         </div>
     </div>
 

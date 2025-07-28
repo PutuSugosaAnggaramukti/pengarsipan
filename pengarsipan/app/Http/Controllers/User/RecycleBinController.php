@@ -4,9 +4,11 @@ namespace App\Http\Controllers\User;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use App\Models\User\Document\DocumentModel;
 use App\Models\Agunan\Agunan;
+
 
 class RecycleBinController extends Controller
 {
@@ -72,4 +74,32 @@ class RecycleBinController extends Controller
         Log::info('FORCE DELETE AGUNAN', ['id' => $id]);
         return back()->with('success', 'Data agunan dihapus permanen.');
     }
+
+        public function bulkRestore(Request $request)
+    {
+        foreach ($request->selected_ids as $item) {
+            [$type, $id] = explode('-', $item);
+            if ($type === 'document') {
+                DocumentModel::withTrashed()->where('id_document', $id)->restore();
+            } elseif ($type === 'agunan') {
+                Agunan::withTrashed()->where('id_agunan', $id)->restore();
+            }
+        }
+        return back()->with('success', 'Data berhasil direstore.');
+    }
+
+    public function bulkDelete(Request $request)
+    {
+        foreach ($request->selected_ids as $item) {
+            [$type, $id] = explode('-', $item);
+            if ($type === 'document') {
+                DocumentModel::withTrashed()->where('id_document', $id)->forceDelete();
+            } elseif ($type === 'agunan') {
+                Agunan::withTrashed()->where('id_agunan', $id)->forceDelete();
+            }
+        }
+        return back()->with('success', 'Data berhasil dihapus permanen.');
+    }
+
+
 }

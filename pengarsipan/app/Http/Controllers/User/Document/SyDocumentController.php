@@ -140,31 +140,28 @@ class SyDocumentController extends Controller
     }
 
     public function hapusBanyak(Request $request)
-{
-    $ids = $request->input('ids', []);
-    if (count($ids)) {
-        $documents = DocumentModel::whereIn('id_document', $ids)->get();
+    {
+        $ids = $request->input('ids', []);
+        if (count($ids)) {
+            $documents = DocumentModel::whereIn('id_document', $ids)->get();
 
-        foreach ($documents as $doc) {
-            // Hapus file dari storage
-            if (Storage::disk('public')->exists($doc->direktory_document)) {
-                Storage::disk('public')->delete($doc->direktory_document);
+            foreach ($documents as $doc) {
+                // Hapus file dari storage
+                if (Storage::disk('public')->exists($doc->direktory_document)) {
+                    Storage::disk('public')->delete($doc->direktory_document);
+                }
+                $doc->delete();
             }
-            $doc->delete();
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Dokumen berhasil dihapus.'
+            ]);
         }
 
         return response()->json([
-            'status' => true,
-            'message' => 'Dokumen berhasil dihapus.'
+            'status' => false,
+            'message' => 'Tidak ada dokumen yang dipilih.'
         ]);
     }
-
-    return response()->json([
-        'status' => false,
-        'message' => 'Tidak ada dokumen yang dipilih.'
-    ]);
-}
-
-    
-
 }
