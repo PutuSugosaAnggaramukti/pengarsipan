@@ -4,32 +4,19 @@ namespace App\Models\User\Document;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use App\Models\User\User;
+use App\Models\User;
 
 /**
- * @property int $id_berkas
- * @property string $jenis_berkas
+ * @property int $id_document
+ * @property string $nomor
  * @property string $tanggal
  * @property string $tahun
- * @property string $nama_berkas
- * @property string $direktory_berkas
- * @property string $create_at
- * @property string $update_at
+ * @property string $nama_document
+ * @property string $direktory_document
  * @property int $npp
- * @method static \Illuminate\Database\Eloquent\Builder<static>|DocumentModel newModelQuery()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|DocumentModel newQuery()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|DocumentModel query()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|DocumentModel whereCreateAt($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|DocumentModel whereDirektoryBerkas($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|DocumentModel whereIdBerkas($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|DocumentModel whereJenisBerkas($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|DocumentModel whereNamaBerkas($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|DocumentModel whereNpp($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|DocumentModel whereTahun($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|DocumentModel whereTanggal($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|DocumentModel whereUpdateAt($value)
- * @mixin \Eloquent
- * @mixin IdeHelperDocumentModel
+ * @property string|null $created_at
+ * @property string|null $updated_at
+ * @property string|null $deleted_at
  */
 class DocumentModel extends Model
 {
@@ -37,23 +24,29 @@ class DocumentModel extends Model
 
     protected $table = 'documents';
     protected $primaryKey = 'id_document';
+    public $timestamps = true;
 
     protected $fillable = [
         'nomor',
         'tanggal',
         'tahun',
         'nama_document',
-        'file',
         'direktory_document',
         'npp'
     ];
 
+    protected $casts = [
+        'tanggal' => 'date',
+        'created_at' => 'datetime',
+        'updated_at' => 'datetime',
+        'deleted_at' => 'datetime',
+    ];
+
     /**
-     * Relasi ke User
-     * documents.npp => users.npp
+     * Relasi ke tabel users berdasarkan NPP
      */
     public function user()
     {
-        return $this->belongsTo(\App\Models\User::class, 'npp', 'npp');
+        return $this->belongsTo(User::class, 'npp', 'npp');
     }
 }

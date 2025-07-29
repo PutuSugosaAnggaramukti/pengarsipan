@@ -49,7 +49,7 @@ class SyDocumentController extends Controller
 
     $request->validate([
         'tahun' => 'required|digits:4',
-        'documents.*' => 'required|file|mimes:pdf,doc,docx,jpg,png|max:1048576'
+        'documents.*' => 'required|file|mimes:pdf,doc,docx,jpg,png|max:51200'
     ]);
     Log::info("VALIDATE OK");
 
@@ -74,6 +74,14 @@ class SyDocumentController extends Controller
     $successCount = 0;
     $failCount = 0;
     $failedFiles = [];
+
+    if (!is_array($files)) {
+        $files = $files ? [$files] : [];
+        }
+
+        if (count($files) === 0) {
+            return back()->with('error', 'Tidak ada file yang diupload.');
+        }
 
     foreach ($files as $file) {
         try {
@@ -139,29 +147,31 @@ class SyDocumentController extends Controller
         return back()->with('success', 'Dokumen berhasil dipindah ke recycle bin.');
     }
 
-    public function hapusBanyak(Request $request)
+        public function hapusBanyak(Request $request)
     {
-        $ids = $request->input('ids', []);
-        if (count($ids)) {
-            $documents = DocumentModel::whereIn('id_document', $ids)->get();
+        $ids = $request->input('ids');
 
-            foreach ($documents as $doc) {
-                // Hapus file dari storage
-                if (Storage::disk('public')->exists($doc->direktory_document)) {
-                    Storage::disk('public')->delete($doc->direktory_document);
-                }
-                $doc->delete();
-            }
-
+        if (!is_array($ids) || count($ids) === 0) {
             return response()->json([
-                'status' => true,
-                'message' => 'Dokumen berhasil dihapus.'
+                'status' => false,
+                'message' => 'Tidak ada dokumen yang dipilih.'
             ]);
         }
 
+        $documents = DocumentModel::whereIn('id_document', $ids)->get();
+
+        foreach ($documents as $doc) {
+            // Hapus file dari storage
+            if (Storage::disk('public')->exists($doc->direktory_document)) {
+                Storage::disk('public')->delete($doc->direktory_document);
+            }
+            $doc->delete();
+        }
+
         return response()->json([
-            'status' => false,
-            'message' => 'Tidak ada dokumen yang dipilih.'
+            'status' => true,
+            'message' => 'Dokumen berhasil dihapus.'
         ]);
     }
+
 }

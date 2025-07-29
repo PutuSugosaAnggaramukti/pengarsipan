@@ -71,6 +71,52 @@
 <script src="https://cdn.datatables.net/2.3.2/js/dataTables.tailwindcss.js"></script>
 
 <script>
+    
+      $('#uploadDocumentForm').on('submit', function(e) {
+        e.preventDefault();
+
+        const form = $(this)[0];
+        const formData = new FormData(form);
+
+        $.ajax({
+            xhr: function() {
+                let xhr = new window.XMLHttpRequest();
+
+                xhr.upload.addEventListener("progress", function(evt) {
+                    if (evt.lengthComputable) {
+                        let percent = Math.round((evt.loaded / evt.total) * 100);
+                        $('#uploadDocumentProgress').show();
+                        $('#documentProgressBar').css('width', percent + '%').text(percent + '%');
+                    }
+                }, false);
+
+                return xhr;
+            },
+            type: 'POST',
+            url: "{{ route('user.page.document.tambah') }}",
+            data: formData,
+            processData: false,
+            contentType: false,
+            beforeSend: function() {
+                $('#uploadDocumentProgress').show();
+                $('#documentProgressBar').css('width', '0%').text('0%');
+            },
+            success: function(response) {
+                $('#documentProgressBar').css('width', '100%').text('100%');
+                Swal.fire('Berhasil!', 'Dokumen berhasil diunggah.', 'success');
+                setTimeout(function() {
+                    $('#uploadDocumentProgress').hide();
+                    $('#tambahDocument').modal('hide');
+                    $('#uploadDocumentForm')[0].reset();
+                    location.reload(); // Refresh daftar dokumen
+                }, 1000);
+            },
+            error: function(xhr) {
+                Swal.fire('Gagal', 'Terjadi kesalahan saat upload file.', 'error');
+                $('#uploadDocumentProgress').hide();
+            }
+        });
+    });
   // Checkbox Select All
     $(document).on('change', '#selectAll', function () {
         $('.selectItem').prop('checked', $(this).is(':checked'));

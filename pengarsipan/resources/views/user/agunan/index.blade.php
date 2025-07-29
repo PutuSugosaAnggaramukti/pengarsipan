@@ -47,7 +47,7 @@
                         </div>
 
                         <div class="mb-3">
-                            <button type="submit" class="btn btn-success">
+                            <button type="submit" class="btn btn-success" id="submitAgunanBtn">
                                 Simpan <i class="fas fa-save fa-lg"></i>
                             </button>
                         </div>
@@ -78,37 +78,60 @@
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <script>
-    // SweetAlert dari session Laravel
-    @if(session('message') && session('type'))
-        Swal.fire({
-            icon: '{{ session("type") }}',
-            title: '{{ session("type") == "success" ? "Berhasil" : "Gagal" }}',
-            text: '{{ session("message") }}',
-            timer: 2500,
-            showConfirmButton: false
-        });
-    @endif
+  document.getElementById('submitAgunanBtn').addEventListener('click', function () {
+    const form = document.getElementById('uploadAgunanForm');
+    const formData = new FormData(form);
 
-    // Optional: Progress bar upload (tanpa AJAX)
-    const uploadAgunanForm = document.getElementById('uploadAgunanForm');
-    const agunanProgressBar = document.getElementById('agunanProgressBar');
-    const uploadAgunanProgress = document.getElementById('uploadAgunanProgress');
+    const progressContainer = document.getElementById('uploadAgunanProgress');
+    const progressBar = document.getElementById('agunanProgressBar');
 
-    uploadAgunanForm.addEventListener('submit', function () {
-        uploadAgunanProgress.style.display = 'block';
-        let percent = 0;
-        agunanProgressBar.style.width = percent + '%';
-        agunanProgressBar.innerHTML = percent + '%';
+    // Reset progress bar
+    progressBar.style.width = '0%';
+    progressBar.innerHTML = '0%';
+    progressContainer.style.display = 'block';
 
-        const interval = setInterval(() => {
-            if (percent >= 95) {
-                clearInterval(interval);
-            } else {
-                percent += 5;
-                agunanProgressBar.style.width = percent + '%';
-                agunanProgressBar.innerHTML = percent + '%';
-            }
-        }, 200);
+    // Kirim AJAX
+    const xhr = new XMLHttpRequest();
+    xhr.open("POST", "{{ route('user.page.agunan.tambah') }}", true);
+    xhr.setRequestHeader("X-CSRF-TOKEN", "{{ csrf_token() }}");
+
+    xhr.upload.addEventListener("progress", function (e) {
+        if (e.lengthComputable) {
+            const percent = Math.round((e.loaded / e.total) * 100);
+            progressBar.style.width = percent + '%';
+            progressBar.innerHTML = percent + '%';
+        }
     });
+
+    xhr.onload = function () {
+        if (xhr.status === 200) {
+            // Jika berhasil
+            Swal.fire({
+                icon: 'success',
+                title: 'Berhasil',
+                text: 'Agunan berhasil diunggah',
+                timer: 4000,
+                showConfirmButton: false
+            }).then(() => location.reload());
+        } else {
+            // Jika gagal
+            Swal.fire({
+                icon: 'error',
+                title: 'Gagal',
+                text: 'Terjadi kesalahan saat mengunggah agunan',
+            });
+        }
+    };
+
+    xhr.onerror = function () {
+        Swal.fire({
+            icon: 'error',
+            title: 'Gagal',
+            text: 'Upload gagal karena koneksi atau kesalahan server',
+        });
+    };
+
+    xhr.send(formData);
+});
 </script>
 @endpush

@@ -66,7 +66,7 @@ class AgunanController extends Controller
 {
      $request->validate([
         'tahun' => 'required|digits:4',
-        'agunans.*' => 'required|file|max:1048576|mimes:pdf,jpg,png,doc,docx'
+        'agunans.*' => 'required|file|max:51200|mimes:pdf,jpg,png,doc,docx'
     ]);
 
     $tahun = $request->tahun;

@@ -63,15 +63,8 @@ Route::middleware(['web', 'auth'])->group(function () {
         Route::delete('/recyclebin/delete/bulk', [RecycleBinController::class, 'bulkDelete'])->name('user.recyclebin.bulkDelete');
     });
 
-    //INFO DOKUMEN & AGUNAN
-    Route::post('/User/Document/POST/DetailDocument', [SyDocumentController::class, 'detail'])->name('user.page.document.post.detail');
-    Route::post('User/Agunan/POST/DetailAgunan', [AgunanController::class, 'detail'])->name('user.page.agunan.post.detail');
+    
 
-    // Tambahan dari remote:
-    Route::post('/user/document/post/berkas', [DocumentController::class, "datatable"])->name("user.page.document.post.berkas");
-    Route::post('/user/document/post/detail', [DocumentController::class, "detail"])->name("user.page.document.post.detail");
-    Route::post('/user/document/upload', [DocumentController::class, 'upload'])->name('user.document.upload');
-    Route::delete('/user/document/delete/{id}', [DocumentController::class, 'destroy'])->name('user.document.delete');
-    Route::get('/user/document/show/{id}', [DocumentController::class, 'show'])->name('user.document.show');
-    Route::get('/user/document/detail/{id}', [DocumentController::class, 'detail']);
+
+
 });
