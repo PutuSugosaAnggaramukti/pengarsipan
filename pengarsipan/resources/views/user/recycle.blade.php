@@ -27,7 +27,7 @@
       @if(!$documents->isEmpty() || !$agunans->isEmpty())
 <form id="bulkActionForm" method="POST">
     @csrf
-    <input type="hidden" name="_method" id="bulkMethod">
+    {{-- <input type="hidden" name="_method" id="bulkMethod"> --}}
 
     {{-- Top bar --}}
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-2">
@@ -116,14 +116,31 @@ function submitBulk(actionType) {
     }).then((result) => {
         if (result.isConfirmed) {
             const form = document.getElementById('bulkActionForm');
-            form.action = actionType === 'delete'
-                ? "{{ route('user.recyclebin.bulkDelete') }}"
-                : "{{ route('user.recyclebin.bulkRestore') }}";
-            document.getElementById('bulkMethod').value = actionType === 'delete' ? 'DELETE' : 'POST';
+
+            // Hapus input _method jika ada sebelumnya
+            const oldMethodInput = document.querySelector('input[name="_method"]');
+            if (oldMethodInput) oldMethodInput.remove();
+
+            if (actionType === 'delete') {
+                form.action = "{{ route('user.recyclebin.bulkDelete') }}";
+
+                // Tambahkan input _method secara dinamis hanya saat delete
+                const methodInput = document.createElement('input');
+                methodInput.type = 'hidden';
+                methodInput.name = '_method';
+                methodInput.value = 'DELETE';
+                form.appendChild(methodInput);
+            } else {
+                form.action = "{{ route('user.recyclebin.bulkRestore') }}";
+                // Tidak menambahkan _method saat restore
+            }
+
             form.submit();
         }
     });
 }
+
+
 
 function confirmDelete(type, id) {
     Swal.fire({
