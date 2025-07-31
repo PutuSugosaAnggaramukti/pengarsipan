@@ -16,7 +16,7 @@ class AgunanController extends Controller
     {
           $dataAgunan = \App\Models\Agunan\Agunan::select('tahun')
             ->groupBy('tahun')
-            ->orderBy('tahun', 'desc')
+            ->orderBy('tahun', 'asc')
             ->get();
 
           return view('user.agunan.index', compact('dataAgunan'));   
