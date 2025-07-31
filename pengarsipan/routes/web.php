@@ -31,12 +31,14 @@ Route::middleware(['web', 'auth'])->group(function () {
     Route::get('/User/Dashboard',[DashboardUser::class,"index"])->name("user.page.dashboard");
 
     // DOCUMENT
-    Route::get('/User/Document',[DocumentController::class,"index"])->name("user.page.document");
-    Route::post("/User/Document/",[SyDocumentController::class,"tambahData"])->name("user.page.document.tambah");
-    Route::get('/User/Document/{parameter}',[DocumentController::class,"dataDocument"])->name("user.page.document.param");
-    Route::post('/User/Document/POST/Document',[SyDocumentController::class,"document"])->name("user.page.document.post.document");
-    Route::post('/User/Document/POST/DetailDocument',[SyDocumentController::class,"detail"])->name("user.page.document.post.detail");
-    Route::post('/User/document/mass-delete', [SyDocumentController::class, 'hapusBanyak'])->name('user.page.document.massDelete');
+    // DOCUMENT
+Route::get('/User/Document',[DocumentController::class,"index"])->name("user.page.document");
+Route::post("/User/Document/",[SyDocumentController::class,"tambahData"])->name("user.page.document.tambah");
+Route::get('/User/Document/{parameter}', [DocumentController::class, 'dataDocument'])->name('user.page.document.param');
+Route::post('/User/document/mass-delete', [SyDocumentController::class, 'hapusBanyak'])->name('user.page.document.massDelete');
+Route::post('/User/Document/post/Document', [SyDocumentController::class,"document"])->name("user.page.document.post.document");
+Route::post('/User/Document/POST/DetailDocument', [SyDocumentController::class, 'detail'])->name('user.page.document.post.detail');
+
 
     //AGUNAN    
     Route::get('/User/Agunan', [AgunanController::class, "index"])->name("user.page.agunan");

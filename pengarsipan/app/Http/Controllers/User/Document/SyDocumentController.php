@@ -5,122 +5,113 @@ namespace App\Http\Controllers\User\Document;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
-use App\Models\User\Document\DocumentModel;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use App\Models\User\Document\DocumentModel;
 
 class SyDocumentController extends Controller
 {
     public function document(Request $request)
     {
-        $id = $request->data;
-        $dataDetail["data"] = DocumentModel::where("tahun", $id)->get();
-        return response()->json($dataDetail);
+        $id = $request->input('data');
+
+        $documents = DocumentModel::select(
+            'id_document',
+            'nomor',
+            'tanggal',
+            'nama_document',
+            'direktory_document'
+        )
+        ->where("tahun", $id)
+        ->get();
+
+        return response()->json([
+            'data' => $documents
+        ]);
     }
 
     public function detail(Request $request)
     {
-        $document = \App\Models\User\Document\DocumentModel::withTrashed()
-                    ->with('user')
-                    ->where('id_document', $request->data)
-                    ->first();
+        $data = \App\Models\User\Document\DocumentModel::withTrashed()
+            ->with('user') // pastikan relasi user() ada di model DocumentModel
+            ->find($request->data);
 
-        if (!$document) {
-            return response()->json(['status' => false, 'message' => 'Data tidak ditemukan']);
+        if (!$data) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Data tidak ditemukan'
+            ]);
         }
 
         return response()->json([
             'status' => true,
             'data' => [
-                'nomor' => $document->nomor,
-                'tanggal' => $document->tanggal,
-                'tahun' => $document->tahun,
-                'nama_document' => $document->nama_document,
-                'npp' => $document->npp,
-                'nama_user' => $document->user->nama_user ?? '-',
-                'status' => $document->trashed() ? 'Dihapus' : 'Aktif'
+                'nomor' => $data->nomor,
+                'tanggal' => $data->tanggal,
+                'tahun' => $data->tahun,
+                'nama_document' => $data->nama_document, // konsistensi nama_document
+                'npp' => $data->npp,
+                'nama_user' => $data->user->nama_user ?? '-', // ambil dari relasi
+                'status' => $data->trashed() ? 'Dihapus' : 'Aktif'
             ]
         ]);
     }
 
-   public function tambahData(Request $request)
-{
-    Log::info("=== MULAI UPLOAD DOCUMENT ===", $request->all());
+  public function tambahData(Request $request)
+    {
+        $request->validate([
+            'tahun' => 'required|digits:4',
+            'documents.*' => 'required|file|max:51200|mimes:pdf,doc,docx,jpg,png'
+        ]);
 
-    $request->validate([
-        'tahun' => 'required|digits:4',
-        'documents.*' => 'required|file|mimes:pdf,doc,docx,jpg,png|max:51200'
-    ]);
-    Log::info("VALIDATE OK");
+        $tahun = $request->tahun;
+        $npp = session('npp') ?? (Auth::check() ? Auth::user()->npp : null);
+        $path = "uploads/Document/{$tahun}";
+        $now = now();
+        $today = $now->toDateString();
 
-    $tahun = $request->tahun;
-    $path = "uploads/Document/" . $tahun;
-
-    if (!Storage::disk('public')->exists($path)) {
-        Storage::disk('public')->makeDirectory($path);
-        Log::info("BUAT DIRECTORY: " . $path);
-    }
-
-    $today = now()->toDateString();
-    $nowTimestamp = now();
-
-    $npp = session('npp') ?? (Auth::check() ? Auth::user()->npp : null);
-    if (!$npp) {
-        Log::error('NPP NOT FOUND', ['session' => session()->all(), 'auth_user' => Auth::user()]);
-        return back()->with('error', 'NPP tidak ditemukan. Silahkan login ulang.');
-    }
-
-    $files = $request->file('documents');
-    $successCount = 0;
-    $failCount = 0;
-    $failedFiles = [];
-
-    if (!is_array($files)) {
-        $files = $files ? [$files] : [];
+        if (!$npp) {
+            return back()->with('error', 'NPP tidak ditemukan.');
         }
 
-        if (count($files) === 0) {
-            return back()->with('error', 'Tidak ada file yang diupload.');
+        if (!Storage::disk('public')->exists($path)) {
+            Storage::disk('public')->makeDirectory($path);
         }
 
-    foreach ($files as $file) {
-        try {
-            $fileName = $nowTimestamp->format('Y-m-d_H-i-s') . "_" . $file->getClientOriginalName();
-            $filePath = $file->storeAs($path, $fileName, 'public');
+        $files = $request->file('documents');
+        $success = 0;
+        $failed = 0;
 
-            $lastNomor = DocumentModel::where('tahun', $tahun)->max('nomor');
-            $nextNomor = $lastNomor ? $lastNomor + 1 : 1;
+        foreach ($files as $file) {
+            try {
+                $fileName = $now->format('YmdHis') . '_' . $file->getClientOriginalName();
+                $filePath = $file->storeAs($path, $fileName, 'public');
 
-            DocumentModel::create([
-                'nomor' => $nextNomor,
-                'tanggal' => $today,
-                'tahun' => $tahun,
-                'nama_document' => $file->getClientOriginalName(),
-                'direktory_document' => $filePath,
-                'created_at' => $nowTimestamp,
-                'updated_at' => $nowTimestamp,
-                'npp' => $npp,
-            ]);
+                $lastNomor = DocumentModel::where('tahun', $tahun)->max('nomor');
+                $nextNomor = $lastNomor ? $lastNomor + 1 : 1;
 
-            $successCount++;
-            Log::info('UPLOAD SUKSES', ['file' => $file->getClientOriginalName()]);
-        } catch (\Exception $e) {
-            $failCount++;
-            $failedFiles[] = $file->getClientOriginalName();
-            Log::error('GAGAL UPLOAD', [
-                'file' => $file->getClientOriginalName(),
-                'error' => $e->getMessage()
-            ]);
+                DocumentModel::create([
+                    'nomor' => $nextNomor,
+                    'tanggal' => $today,
+                    'tahun' => $tahun,
+                    'nama_document' => $file->getClientOriginalName(),
+                    'direktory_document' => $filePath,
+                    'npp' => $npp,
+                ]);
+
+                $success++;
+            } catch (\Exception $e) {
+                Log::error('Upload dokumen gagal', [
+                    'file' => $file->getClientOriginalName(),
+                    'error' => $e->getMessage()
+                ]);
+                $failed++;
+            }
         }
-    }
 
-    $message = "{$successCount} file berhasil diupload.";
-    if ($failCount > 0) {
-        $message .= " {$failCount} gagal: " . implode(', ', $failedFiles);
+        return redirect()->route('user.page.document')
+            ->with('success', "Upload selesai. Berhasil: $success, Gagal: $failed");
     }
-
-    return redirect()->route('user.page.document')->with('success', $message);
-}
 
 
     public function preview($tahun, $file)
@@ -147,30 +138,29 @@ class SyDocumentController extends Controller
         return back()->with('success', 'Dokumen berhasil dipindah ke recycle bin.');
     }
 
-        public function hapusBanyak(Request $request)
+   public function hapusBanyak(Request $request)
     {
-        $ids = $request->input('ids');
+        $ids = $request->input('ids', []);
 
-        if (!is_array($ids) || count($ids) === 0) {
+        if (count($ids)) {
+            $documents = DocumentModel::whereIn('id_document', $ids)->get();
+
+            foreach ($documents as $doc) {
+                if (Storage::disk('public')->exists($doc->direktory_document)) {
+                    Storage::disk('public')->delete($doc->direktory_document);
+                }
+                $doc->delete();
+            }
+
             return response()->json([
-                'status' => false,
-                'message' => 'Tidak ada dokumen yang dipilih.'
+                'status' => true,
+                'message' => 'Dokumen berhasil dihapus.'
             ]);
         }
 
-        $documents = DocumentModel::whereIn('id_document', $ids)->get();
-
-        foreach ($documents as $doc) {
-            // Hapus file dari storage
-            if (Storage::disk('public')->exists($doc->direktory_document)) {
-                Storage::disk('public')->delete($doc->direktory_document);
-            }
-            $doc->delete();
-        }
-
         return response()->json([
-            'status' => true,
-            'message' => 'Dokumen berhasil dihapus.'
+            'status' => false,
+            'message' => 'Tidak ada dokumen yang dipilih.'
         ]);
     }
 
