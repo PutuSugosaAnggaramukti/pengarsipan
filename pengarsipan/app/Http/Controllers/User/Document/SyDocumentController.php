@@ -59,10 +59,17 @@ class SyDocumentController extends Controller
 
   public function tambahData(Request $request)
     {
-        $request->validate([
+       $request->validate([
             'tahun' => 'required|digits:4',
-            'documents.*' => 'required|file|max:51200|mimes:pdf,doc,docx,jpg,png'
+            'documents' => 'required|array|min:1',
+            'documents.*' => 'file|max:51200|mimes:pdf,doc,docx,jpg,png',
         ]);
+
+        $files = $request->file('documents');
+
+        if (!$files || count($files) === 0) {
+            return back()->with('error', 'File dokumen tidak ditemukan.');
+        }
 
         $tahun = $request->tahun;
         $npp = session('npp') ?? (Auth::check() ? Auth::user()->npp : null);

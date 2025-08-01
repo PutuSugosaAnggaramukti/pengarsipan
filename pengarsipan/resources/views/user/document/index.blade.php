@@ -74,12 +74,53 @@
     </div>
 @endsection
 
+@if(session('error'))
+<script>
+    Swal.fire({
+        icon: 'error',
+        title: 'Gagal!',
+        text: '{{ session("error") }}',
+    });
+</script>
+@endif
+
+
 @push('script')
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <script>
-  document.getElementById('submitDokumenBtn').addEventListener('click', function (e) {
+document.getElementById('uploadDocumentForm').addEventListener('submit', function(e) {
+    const tahun = document.querySelector('input[name="tahun"]').value.trim();
+    const files = document.querySelector('input[name="documents[]"]').files;
+
+    if (!tahun || files.length === 0) {
+        e.preventDefault(); // Stop form
+        Swal.fire({
+            icon: 'error',
+            title: 'Gagal!',
+            text: 'Tahun dokumen dan file wajib diisi!',
+        });
+    }
+});
+</script>
+
+
+<script>
+ document.getElementById('submitDokumenBtn').addEventListener('click', function (e) {
     e.preventDefault();
+
+    const tahun = document.querySelector('input[name="tahun"]').value.trim();
+    const files = document.querySelector('input[name="documents[]"]').files;
+
+    if (!tahun || files.length === 0) {
+        Swal.fire({
+            icon: 'error',
+            title: 'Gagal!',
+            text: 'Tahun dokumen dan file wajib diisi!',
+        });
+        return;
+    }
+
     const form = document.getElementById('uploadDocumentForm');
     const formData = new FormData(form);
 
@@ -112,6 +153,14 @@
                 timer: 3000,
                 showConfirmButton: false
             }).then(() => location.reload());
+        } else if (xhr.status === 422) {
+            const response = JSON.parse(xhr.responseText);
+            const errors = Object.values(response.errors).flat().join('\n');
+            Swal.fire({
+                icon: 'error',
+                title: 'Validasi Gagal!',
+                text: errors
+            });
         } else {
             Swal.fire({
                 icon: 'error',
@@ -131,5 +180,7 @@
 
     xhr.send(formData);
 });
+
 </script>
+
 @endpush

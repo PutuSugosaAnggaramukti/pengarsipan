@@ -51,7 +51,7 @@ Route::post('/User/Document/POST/DetailDocument', [SyDocumentController::class, 
     // FILE PREVIEW + RECYCLE BIN
     Route::get('/document/preview/{tahun}/{file}', [SyDocumentController::class, 'preview'])->name('document.preview');
     Route::get('/agunan/preview/{tahun}/{file}', [AgunanController::class, 'preview'])->name('agunan.preview');
-    Route::delete('/document/delete/{id}', [SyDocumentController::class, 'softDelete'])->name('document.softdelete');
+    Route::get('document/delete/{id}', [SyDocumentController::class, 'softDelete'])->name('user.page.document.softDelete');
     Route::delete('/agunan/delete/{id}', [AgunanController::class, 'softDelete'])->name('agunan.softdelete');
 
     Route::prefix('recycle-bin')->group(function() {

@@ -67,6 +67,31 @@
 <script src="https://cdn.datatables.net/responsive/2.5.0/js/dataTables.responsive.min.js"></script>
 <script src="https://cdn.datatables.net/2.3.2/js/dataTables.tailwindcss.js"></script>
 
+@if (session('success'))
+    <script>
+        Swal.fire({
+            icon: 'success',
+            title: 'Berhasil!',
+            text: '{{ session('success') }}',
+            timer: 3000,
+            showConfirmButton: false
+        });
+    </script>
+@endif
+
+@if (session('error'))
+    <script>
+        Swal.fire({
+            icon: 'error',
+            title: 'Gagal!',
+            text: '{{ session('error') }}',
+            timer: 3000,
+            showConfirmButton: false
+        });
+    </script>
+@endif
+
+
 <script>
 $(document).ready(function () {
     let table = $('#example').DataTable({
@@ -159,7 +184,7 @@ $(document).ready(function () {
                     },
                     success: function (response) {
                         Swal.fire('Berhasil!', response.message, 'success');
-                        table.ajax.reload();
+                        table.ajax.reload(null, false);
                     },
                     error: function () {
                         Swal.fire('Gagal!', 'Terjadi kesalahan.', 'error');
@@ -179,29 +204,13 @@ function hapusDokumen(url) {
         cancelButtonColor: '#3085d6',
         confirmButtonText: 'Ya, hapus!',
         cancelButtonText: 'Batal'
-    }).then(result => {
+    }).then((result) => {
         if (result.isConfirmed) {
-            let form = document.createElement('form');
-            form.action = url;
-            form.method = 'POST';
-
-            let token = document.createElement('input');
-            token.type = 'hidden';
-            token.name = '_token';
-            token.value = '{{ csrf_token() }}';
-            form.appendChild(token);
-
-            let method = document.createElement('input');
-            method.type = 'hidden';
-            method.name = '_method';
-            method.value = 'DELETE';
-            form.appendChild(method);
-
-            document.body.appendChild(form);
-            form.submit();
+            window.location.href = url; // Pakai redirect, biar session 'success' terbawa
         }
     });
 }
+
 
 function detailDocument(id) {
     $.post("{{ route('user.page.document.post.detail') }}", {

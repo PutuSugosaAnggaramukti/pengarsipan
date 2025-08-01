@@ -64,8 +64,9 @@ class AgunanController extends Controller
 
   public function tambahData(Request $request)
 {
-     $request->validate([
+    $request->validate([
         'tahun' => 'required|digits:4',
+        'agunans' => 'required|array|min:1',
         'agunans.*' => 'required|file|max:51200|mimes:pdf,jpg,png,doc,docx'
     ]);
 

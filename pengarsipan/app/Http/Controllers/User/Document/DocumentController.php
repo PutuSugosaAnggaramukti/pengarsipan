@@ -12,7 +12,7 @@ class DocumentController extends Controller
     {
         $dataDocument = DocumentModel::select('tahun')
             ->groupBy('tahun')
-            ->orderBy('tahun', 'desc')
+            ->orderBy('tahun', 'asc')
             ->get();
 
         return view('user.document.index', compact('dataDocument'));

@@ -78,7 +78,22 @@
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <script>
-  document.getElementById('submitAgunanBtn').addEventListener('click', function () {
+  document.getElementById('submitAgunanBtn').addEventListener('click', function (e) {
+    e.preventDefault(); 
+
+    const tahun = document.querySelector('input[name="tahun"]').value.trim();
+    const files = document.querySelector('input[name="agunans[]"]').files;
+
+    // 🔍 Validasi kosong
+    if (!tahun || files.length === 0) {
+        Swal.fire({
+            icon: 'error',
+            title: 'Gagal!',
+            text: 'Tahun agunan dan file wajib diisi.',
+        });
+        return;
+    }
+
     const form = document.getElementById('uploadAgunanForm');
     const formData = new FormData(form);
 
@@ -105,7 +120,6 @@
 
     xhr.onload = function () {
         if (xhr.status === 200) {
-            // Jika berhasil
             Swal.fire({
                 icon: 'success',
                 title: 'Berhasil',
@@ -113,8 +127,16 @@
                 timer: 4000,
                 showConfirmButton: false
             }).then(() => location.reload());
+        } else if (xhr.status === 422) {
+            // Tangkap validasi gagal dari Laravel
+            const res = JSON.parse(xhr.responseText);
+            const errorMessages = Object.values(res.errors).flat().join('<br>');
+            Swal.fire({
+                icon: 'error',
+                title: 'Gagal Validasi!',
+                html: errorMessages
+            });
         } else {
-            // Jika gagal
             Swal.fire({
                 icon: 'error',
                 title: 'Gagal',
@@ -132,6 +154,6 @@
     };
 
     xhr.send(formData);
-});
+  });
 </script>
 @endpush
