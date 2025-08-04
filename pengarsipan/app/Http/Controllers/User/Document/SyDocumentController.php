@@ -139,12 +139,15 @@ class SyDocumentController extends Controller
     public function softDelete($id)
     {
         $doc = DocumentModel::find($id);
-        if (!$doc) return back()->with('error', 'Data tidak ditemukan.');
+
+        if (!$doc) {
+            return response()->json(['message' => 'Data tidak ditemukan.'], 404);
+        }
 
         $doc->delete();
         Log::info('SOFT DELETE DOCUMENT', ['id' => $id]);
 
-        return back()->with('success', 'Dokumen berhasil dipindah ke recycle bin.');
+        return response()->json(['message' => 'Dokumen berhasil dipindah ke recycle bin.']);
     }
 
    public function hapusBanyak(Request $request)

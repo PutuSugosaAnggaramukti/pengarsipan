@@ -5,7 +5,6 @@
 @push('link')
     <link rel="stylesheet" href="https://cdn.datatables.net/2.3.2/css/dataTables.tailwindcss.css">
     <link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.5.0/css/responsive.dataTables.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 @endpush
 
 @section('breadcurb')
@@ -91,6 +90,11 @@
     </script>
 @endif
 
+<script>
+    const baseSoftDeleteUrl = "{{ url('document/delete') }}/";
+</script>
+
+
 
 <script>
 $(document).ready(function () {
@@ -135,7 +139,7 @@ $(document).ready(function () {
                             <i class="fa fa-eye fa-lg block"></i>
                             <b class="block mt-1">Preview</b>
                         </a>
-                       <button type="button" onclick="hapusDokumen('${deleteUrl}')" class="text-center px-4 text-[red] no-underline cursor-pointer hover:bg-[#eaea] rounded-lg py-2 mx-1">
+                       <button type="button" onclick="hapusDokumen(${row.id_document})" class="text-center px-4 text-[red] no-underline cursor-pointer hover:bg-[#eaea] rounded-lg py-2 mx-1">
                             <i class="fa fa-trash fa-lg block"></i>
                             <b class="block mt-1">Delete</b>
                         </button>
@@ -196,7 +200,9 @@ $(document).ready(function () {
     });
 });
 
-function hapusDokumen(url) {
+function hapusDokumen(id) {
+    const url = baseSoftDeleteUrl + id; 
+
     Swal.fire({
         title: 'Hapus Dokumen?',
         icon: 'warning',
@@ -207,7 +213,20 @@ function hapusDokumen(url) {
         cancelButtonText: 'Batal'
     }).then((result) => {
         if (result.isConfirmed) {
-            window.location.href = url; // Pakai redirect, biar session 'success' terbawa
+            $.ajax({
+                url: url,
+                type: 'DELETE',
+                data: {
+                    _token: '{{ csrf_token() }}'
+                },
+                success: function(response) {
+                    Swal.fire('Berhasil!', response.message, 'success');
+                    $('#example').DataTable().ajax.reload(null, false);
+                },
+                error: function(xhr) {
+                    Swal.fire('Gagal!', 'Gagal menghapus dokumen.', 'error');
+                }
+            });
         }
     });
 }

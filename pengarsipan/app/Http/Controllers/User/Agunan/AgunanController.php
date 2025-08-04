@@ -137,12 +137,30 @@ class AgunanController extends Controller
     public function softDelete($id)
     {
         $agunan = Agunan::find($id);
-        if (!$agunan) return back()->with('error', 'Data tidak ditemukan.');
 
-        $agunan->delete();
-        Log::info('SOFT DELETE AGUNAN', ['id' => $id]);
+        if (!$agunan) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Data agunan tidak ditemukan.'
+            ], 404);
+        }
 
-        return back()->with('success', 'Data Agunan berhasil dipindah ke recycle bin.');
+        try {
+            $agunan->delete();
+            Log::info('SOFT DELETE AGUNAN', ['id' => $id]);
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Data agunan berhasil dipindah ke recycle bin.'
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Gagal soft delete agunan', ['id' => $id, 'error' => $e->getMessage()]);
+            return response()->json([
+                'status' => false,
+                'message' => 'Terjadi kesalahan saat menghapus agunan.',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 
     public function hapusBanyak(Request $request)

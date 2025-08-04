@@ -52,6 +52,11 @@
 <script src="https://cdn.datatables.net/2.3.2/js/dataTables.tailwindcss.js"></script>
 
 <script>
+    const baseSoftDeleteAgunanUrl = "{{ url('agunan/delete') }}/";
+</script>
+
+
+<script>
 $(document).ready(function () {
     let table = $('#example').DataTable({
         ajax: {
@@ -85,7 +90,8 @@ $(document).ready(function () {
                     var fileName = pathParts[3];
 
                     var previewUrl = "{{ url('/agunan/preview') }}/" + tahun + "/" + fileName;
-                    var deleteUrl = "{{ url('/agunan/delete') }}/" + row.id_agunan;
+                    var deleteUrl = "{{ route('agunan.softdelete', ':id') }}".replace(':id', row.id_agunan);
+
 
                     return `
                         <div class="flex items-center justify-center gap-2">
@@ -93,7 +99,7 @@ $(document).ready(function () {
                                 <i class="fa fa-eye fa-lg block"></i>
                                 <b class="block mt-1">Preview</b>
                             </a>
-                            <button type="button" onclick="hapusAgunan('${deleteUrl}')" class="text-center px-4 text-[red] no-underline cursor-pointer hover:bg-[#eaea] rounded-lg py-2 mx-1">
+                            <button type="button" onclick="hapusAgunan(${row.id_agunan})" class="text-center px-4 text-[red] no-underline cursor-pointer hover:bg-[#eaea] rounded-lg py-2 mx-1">
                                 <i class="fa fa-trash fa-lg block"></i>
                                 <b class="block mt-1">Delete</b>
                             </button>
@@ -156,7 +162,9 @@ $(document).ready(function () {
     });
 });
 
-function hapusAgunan(url) {
+function hapusAgunan(id) {
+    const url = baseSoftDeleteAgunanUrl + id;
+
     Swal.fire({
         title: 'Hapus Agunan?',
         icon: 'warning',
@@ -167,10 +175,25 @@ function hapusAgunan(url) {
         cancelButtonText: 'Batal'
     }).then((result) => {
         if (result.isConfirmed) {
-            window.location.href = url;
+            $.ajax({
+                url: url,
+                type: 'DELETE',
+                data: {
+                    _token: '{{ csrf_token() }}'
+                },
+                success: function(response) {
+                    Swal.fire('Berhasil!', response.message, 'success');
+                    $('#example').DataTable().ajax.reload(null, false);
+                },
+                error: function(xhr) {
+                    Swal.fire('Gagal!', 'Gagal menghapus agunan.', 'error');
+                }
+            });
         }
     });
 }
+
+
 
 function detailAgunan(id) {
     $.post("{{ route('user.page.agunan.post.detail') }}", {
@@ -183,9 +206,9 @@ function detailAgunan(id) {
                 <table class="table-auto w-full text-left">
                     <tr><th>Tanggal:</th><td>${d.tanggal.split('T')[0]}</td></tr>
                     <tr><th>Tahun:</th><td>${d.tahun}</td></tr>
-                    <tr><th>Nama:</th><td>${d.nama_agunan}</td></tr>
+                    <tr><th>Nama Agunan:</th><td>${d.nama_agunan}</td></tr>
                     <tr><th>NPP:</th><td>${d.npp}</td></tr>
-                    <tr><th>User:</th><td>${d.nama_user}</td></tr>
+                    <tr><th>User yang mengupload:</th><td>${d.nama_user}</td></tr>
                     <tr><th>Status:</th><td>${d.status}</td></tr>
                 </table>`;
             $('#bodyDetailAgunan').html(html);
