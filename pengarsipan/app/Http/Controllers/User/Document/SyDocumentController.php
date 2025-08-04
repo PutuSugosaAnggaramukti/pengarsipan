@@ -15,15 +15,14 @@ class SyDocumentController extends Controller
     {
         $id = $request->input('data');
 
-        $documents = DocumentModel::select(
-            'id_document',
-            'nomor',
-            'tanggal',
-            'nama_document',
-            'direktory_document'
-        )
-        ->where("tahun", $id)
-        ->get();
+        $documents = DocumentModel::where('tahun', $id)->get()->map(function ($item) {
+            return [
+                'id_document' => $item->id_document,
+                'tanggal' => \Carbon\Carbon::parse($item->tanggal)->format('Y-m-d'),
+                'nama_document' => $item->nama_document,
+                'direktory_document' => $item->direktory_document,
+            ];
+        });
 
         return response()->json([
             'data' => $documents
