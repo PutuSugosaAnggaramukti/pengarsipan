@@ -121,11 +121,12 @@ $(document).ready(function () {
         {
             data: null,
             render: function (row) {
-                var pathParts = row.direktory_document.split('/');
-                var tahun = pathParts[2];
-                var fileName = pathParts[3];
+                var filePath = row.direktory_document;
+                var parts = filePath.split('/');
+                var tahun = parts[2];
+                var namaFile = parts[3];
+                var previewUrl = "{{ url('/document/preview') }}/" + encodeURIComponent(tahun) + "/" + encodeURIComponent(namaFile);
 
-                var previewUrl = "{{ url('/document/preview') }}/" + tahun + "/" + fileName;
                 var deleteUrl = "{{ url('/document/delete') }}/" + row.id_document;
 
                 return `

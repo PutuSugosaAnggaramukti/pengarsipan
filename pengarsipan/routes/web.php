@@ -31,7 +31,6 @@ Route::middleware(['web', 'auth'])->group(function () {
     Route::get('/User/Dashboard',[DashboardUser::class,"index"])->name("user.page.dashboard");
 
     // DOCUMENT
-    // DOCUMENT
 Route::get('/User/Document',[DocumentController::class,"index"])->name("user.page.document");
 Route::post("/User/Document/",[SyDocumentController::class,"tambahData"])->name("user.page.document.tambah");
 Route::get('/User/Document/{parameter}', [DocumentController::class, 'dataDocument'])->name('user.page.document.param');

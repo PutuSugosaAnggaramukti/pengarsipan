@@ -90,7 +90,7 @@ class SyDocumentController extends Controller
 
         foreach ($files as $file) {
             try {
-                $fileName = $now->format('YmdHis') . '_' . $file->getClientOriginalName();
+                $fileName = $now->format('YmdHis_u') . '_' . uniqid() . '_' . $file->getClientOriginalName();
                 $filePath = $file->storeAs($path, $fileName, 'public');
 
                 $lastNomor = DocumentModel::where('tahun', $tahun)->max('nomor');
@@ -122,10 +122,13 @@ class SyDocumentController extends Controller
 
     public function preview($tahun, $file)
     {
+        $file = urldecode($file);
+
         $path = "uploads/Document/{$tahun}/{$file}";
 
         if (!Storage::disk('public')->exists($path)) {
-            abort(404, 'File not found.');
+            Log::warning('File tidak ditemukan:', ['path' => $path]);
+            abort(404, 'File tidak ditemukan.');
         }
 
         return response()->file(Storage::disk('public')->path($path), [
